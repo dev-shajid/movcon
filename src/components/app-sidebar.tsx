@@ -6,8 +6,6 @@ import {
     FilePlus,
     CheckCircle,
     Shield,
-    LogOut,
-    User,
     ClipboardList,
 } from 'lucide-react';
 import {

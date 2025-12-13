@@ -14,7 +14,6 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form"
-import { signIn } from "next-auth/react"
 import { toast } from "sonner"
 import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -45,31 +44,31 @@ export function LoginForm({
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setLoading(true);
         try {
-            const result = await signIn("credentials", {
-                email: values.email,
-                password: values.password,
-                redirect: false,
-            });
+            // const result = await signIn("credentials", {
+            //     email: values.email,
+            //     password: values.password,
+            //     redirect: false,
+            // });
 
-            if (result?.error) {
-                if (result.error === "CredentialsSignin") {
-                    throw new Error("Invalid email or password. Please try again.");
-                } else if (result.error === "AccessDenied") {
-                    throw new Error(
-                        "Account verification required. Check your email for the link.",
-                    );
-                } else {
-                    throw new Error("Authentication failed. Please try again.");
-                }
-            } else if (result?.ok) {
-                toast.success("Sign In Successful!", {
-                    description: "Redirecting to your profile...",
-                });
-                const callbackUrl = searchParams.get("callbackUrl") || "/";
-                router.push(callbackUrl);
-            } else {
-                throw new Error("Unexpected error. Please try again.");
-            }
+            // if (result?.error) {
+            //     if (result.error === "CredentialsSignin") {
+            //         throw new Error("Invalid email or password. Please try again.");
+            //     } else if (result.error === "AccessDenied") {
+            //         throw new Error(
+            //             "Account verification required. Check your email for the link.",
+            //         );
+            //     } else {
+            //         throw new Error("Authentication failed. Please try again.");
+            //     }
+            // } else if (result?.ok) {
+            //     toast.success("Sign In Successful!", {
+            //         description: "Redirecting to your profile...",
+            //     });
+            //     const callbackUrl = searchParams.get("callbackUrl") || "/";
+            //     router.push(callbackUrl);
+            // } else {
+            //     throw new Error("Unexpected error. Please try again.");
+            // }
         } catch (error) {
             toast.error("Authentication Error", {
                 description:
