@@ -68,7 +68,7 @@ export default function NewRequest() {
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="driverName">Driver Name *</Label>
-                            <Input id="driverName" placeholder="e.g., Naik Saleem" required />
+                            <Input id="driverName" placeholder="e.g., Cpl Saleem" required />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="driverContact">Driver Contact *</Label>
