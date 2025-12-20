@@ -1,5 +1,5 @@
 import { Check, X, Clock } from 'lucide-react';
-import { ApprovalRecord, ROLE_LABELS, UserRole } from '@/types';
+import { ApprovalRecord, ROLE_LABELS, TUserRole } from '@/types';
 import { cn, formatDate } from '@/lib/utils';
 
 interface ApprovalTimelineProps {
@@ -7,27 +7,27 @@ interface ApprovalTimelineProps {
   currentStatus: string;
 }
 
-const APPROVAL_ORDER: UserRole[] = ['adjutant', 'co', 'gso1', 'col_staff'];
+const APPROVAL_ORDER: TUserRole[] = ['adjutant', 'co', 'gso1', 'col_staff'];
 
 export function ApprovalTimeline({ history, currentStatus }: ApprovalTimelineProps) {
-  const getStepStatus = (role: UserRole) => {
+  const getStepStatus = (role: TUserRole) => {
     const record = history.find(h => h.role === role);
     if (record) {
       return record.action;
     }
-    
-    const currentPendingRole = currentStatus.replace('pending_', '') as UserRole;
+
+    const currentPendingRole = currentStatus.replace('pending_', '') as TUserRole;
     const currentIndex = APPROVAL_ORDER.indexOf(currentPendingRole);
     const roleIndex = APPROVAL_ORDER.indexOf(role);
-    
+
     if (roleIndex === currentIndex) {
       return 'pending';
     }
-    
+
     return 'waiting';
   };
 
-  const getStepRecord = (role: UserRole) => {
+  const getStepRecord = (role: TUserRole) => {
     return history.find(h => h.role === role);
   };
 
@@ -61,7 +61,7 @@ export function ApprovalTimeline({ history, currentStatus }: ApprovalTimelinePro
                 {!isLast && (
                   <div
                     className={cn(
-                      'w-0.5 flex-1 min-h-[40px]',
+                      'w-0.5 flex-1 min-h-10',
                       status === 'approved' ? 'bg-success' : 'bg-border'
                     )}
                   />

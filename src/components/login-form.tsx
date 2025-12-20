@@ -3,167 +3,198 @@
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card"
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
+import { Controller, useForm } from "react-hook-form"
 import * as z from "zod"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form"
-import { toast } from "sonner"
-import { useState } from "react"
+import Link from "next/link"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Eye, EyeOff, Lock, Loader2, Mail } from "lucide-react"
+import { login } from "@/services/auth.service"
+import { AUTH_REDIRECT_URL } from "@/route"
 
 const formSchema = z.object({
-    email: z.email("Please enter a valid email address."),
-    password: z
-        .string()
-        .min(5, "Password must be at least 5 characters.")
+  email: z.email("Please enter a valid email address."),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters.")
 })
 
-export function LoginForm({
-    className,
-    ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+function LoginFormContent({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
-    const [loading, setLoading] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
-    const router = useRouter();
-    const searchParams = useSearchParams();
+  useEffect(() => {
+    const resetStatus = searchParams.get('reset')
+    const code = searchParams.get('code')
+    const error_description = searchParams.get('error_description')
 
-    const form = useForm<z.infer<typeof formSchema>>({
-        resolver: zodResolver(formSchema),
-        defaultValues: { email: process.env.NEXT_PUBLIC_AUTH_EMAIL, password: process.env.NEXT_PUBLIC_AUTH_PASSWORD },
-    });
-
-    async function onSubmit(values: z.infer<typeof formSchema>) {
-        setLoading(true);
-        try {
-            // const result = await signIn("credentials", {
-            //     email: values.email,
-            //     password: values.password,
-            //     redirect: false,
-            // });
-
-            // if (result?.error) {
-            //     if (result.error === "CredentialsSignin") {
-            //         throw new Error("Invalid email or password. Please try again.");
-            //     } else if (result.error === "AccessDenied") {
-            //         throw new Error(
-            //             "Account verification required. Check your email for the link.",
-            //         );
-            //     } else {
-            //         throw new Error("Authentication failed. Please try again.");
-            //     }
-            // } else if (result?.ok) {
-            //     toast.success("Sign In Successful!", {
-            //         description: "Redirecting to your profile...",
-            //     });
-            //     const callbackUrl = searchParams.get("callbackUrl") || "/";
-            //     router.push(callbackUrl);
-            // } else {
-            //     throw new Error("Unexpected error. Please try again.");
-            // }
-        } catch (error) {
-            toast.error("Authentication Error", {
-                description:
-                    error instanceof Error ? error.message : "Unexpected error occurred.",
-            });
-        } finally {
-            setLoading(false);
-        }
+    if (resetStatus === 'success') {
+      setSuccessMessage('Password reset successful! You can now sign in with your new password.')
+    } else if (error_description) {
+      setError(decodeURIComponent(error_description.split("+").join(" ")))
+    } else if (code) {
+      setSuccessMessage('Successfully verified your email! You can now sign in.')
     }
+  }, [searchParams])
 
-    return (
-        <div className={cn("flex flex-col gap-6", className)} {...props}>
-            <Card>
-                <CardHeader className="text-center">
-                    <CardTitle className="text-xl">Welcome back</CardTitle>
-                    <CardDescription>
-                        Login with your Apple or Google account
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-5'>
-                            <FormField
-                                control={form.control}
-                                name='email'
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className='text-sm font-medium text-foreground'>
-                                            Email
-                                        </FormLabel>
-                                        <FormControl>
-                                            <div className='relative'>
-                                                <Mail className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
-                                                <Input
-                                                    type='email'
-                                                    placeholder='name@example.com'
-                                                    className='pl-10 h-11 border-border focus:border-primary'
-                                                    disabled={loading}
-                                                    {...field}
-                                                />
-                                            </div>
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name='password'
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormControl>
-                                            <div className='relative'>
-                                                <Lock className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
-                                                <Input
-                                                    type={showPassword ? "text" : "password"}
-                                                    placeholder='Enter your password'
-                                                    className='pl-10 pr-10 h-11 border-border focus:border-primary'
-                                                    disabled={loading}
-                                                    {...field}
-                                                />
-                                                <button
-                                                    type='button'
-                                                    onClick={() => setShowPassword(!showPassword)}
-                                                    className='absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 hover:bg-muted transition-colors'
-                                                    disabled={loading}
-                                                >
-                                                    {showPassword ? (
-                                                        <EyeOff className='h-4 w-4 text-muted-foreground' />
-                                                    ) : (
-                                                        <Eye className='h-4 w-4 text-muted-foreground' />
-                                                    )}
-                                                </button>
-                                            </div>
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <Button
-                                type='submit'
-                                className='w-full bg-linear-to-r text-white font-medium'
-                                disabled={loading}
-                            >
-                                {(loading) && (
-                                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                                )}
-                                {loading
-                                    ? "Signing in..."
-                                    : "Sign in"}
-                            </Button>
-                        </form>
-                    </Form>
-                </CardContent>
-            </Card>
-        </div>
-    )
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  })
+
+  async function onSubmit(data: z.infer<typeof formSchema>) {
+    setIsLoading(true)
+    setError(null)
+    setSuccessMessage(null)
+
+    try {
+      const res = await login({ email: data.email, password: data.password })
+      if (!res.success) throw Error(res.error)
+      router.push(AUTH_REDIRECT_URL)
+    } catch (error) {
+      setError((error as Error).message || 'Invalid email or password. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return (
+    <div className={cn("flex flex-col gap-6", className)} {...props}>
+      <Card>
+        <CardHeader className="text-center">
+          <CardTitle className="text-xl">Welcome back</CardTitle>
+          <CardDescription>
+            Login with your Apple or Google account
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <FieldGroup>
+              <Controller
+                name="email"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor={field.name}>Email</FieldLabel>
+                    <Input
+                      {...field}
+                      id={field.name}
+                      type="email"
+                      aria-invalid={fieldState.invalid}
+                      placeholder="Enter your Email"
+                    />
+                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  </Field>
+                )}
+              />
+              <Controller
+                name="password"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <div className="flex items-center">
+                      <FieldLabel htmlFor={field.name}>Password</FieldLabel>
+                      <Link
+                        href="/forgot-password"
+                        className="ml-auto text-sm underline-offset-4 hover:underline"
+                      >
+                        Forgot your password?
+                      </Link>
+                    </div>
+                    <Input
+                      {...field}
+                      id={field.name}
+                      type="password"
+                      aria-invalid={fieldState.invalid}
+                      placeholder="Enter your Password"
+                    />
+                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  </Field>
+                )}
+              />
+
+              {successMessage && (
+                <div className="rounded-md bg-green-500/7 border border-green-500/20 p-3 text-sm dark:text-green-400 text-green-600">
+                  {successMessage}
+                </div>
+              )}
+
+              {error && (
+                <div className="rounded-md bg-destructive/7 border border-destructive/20 p-3 text-sm text-destructive">
+                  {error}
+                </div>
+              )}
+
+              <Field>
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? 'Signing in...' : 'Sign In'}
+                </Button>
+                <FieldDescription className="text-center">
+                  Don&apos;t have an account? <Link href='/signup'>Sign up</Link>
+                </FieldDescription>
+              </Field>
+            </FieldGroup>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+export function LoginForm({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
+  return (
+    <Suspense fallback={
+      <div className={cn("flex flex-col gap-6", className)}>
+        <Card>
+          <CardHeader className="text-center">
+            <CardTitle className="text-xl">Welcome back</CardTitle>
+            <CardDescription>
+              Login with your Apple or Google account
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <div className="h-4 bg-muted rounded animate-pulse" />
+                <div className="h-10 bg-muted rounded animate-pulse" />
+              </div>
+              <div className="space-y-2">
+                <div className="h-4 bg-muted rounded animate-pulse" />
+                <div className="h-10 bg-muted rounded animate-pulse" />
+              </div>
+              <div className="h-10 bg-muted rounded animate-pulse" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    }>
+      <LoginFormContent className={className} {...props} />
+    </Suspense>
+  )
 }

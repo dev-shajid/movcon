@@ -1,12 +1,13 @@
-export type UserRole = 
-  | 'mt_office' 
-  | 'adjutant' 
-  | 'co' 
-  | 'gso1' 
-  | 'col_staff' 
+export type TUserRole =
+  | 'admin'
+  | 'mt_office'
+  | 'adjutant'
+  | 'co'
+  | 'gso1'
+  | 'col_staff'
   | 'mp_checkpost';
 
-export type RequestStatus = 
+export type RequestStatus =
   | 'pending_adjutant'
   | 'pending_co'
   | 'pending_gso1'
@@ -17,8 +18,9 @@ export type RequestStatus =
 export interface User {
   id: string;
   name: string;
-  role: UserRole;
+  role: TUserRole;
   email: string;
+  verified?: boolean; // Added for verification logic
 }
 
 export interface MovementRequest {
@@ -42,7 +44,7 @@ export interface MovementRequest {
 }
 
 export interface ApprovalRecord {
-  role: UserRole;
+  role: TUserRole;
   userId: string;
   userName: string;
   action: 'approved' | 'rejected';
@@ -80,13 +82,14 @@ export interface MovementCertificate {
   authorizedBy: string;
 }
 
-export const ROLE_LABELS: Record<UserRole, string> = {
+export const ROLE_LABELS: Record<TUserRole, string> = {
   mt_office: 'MT Office',
   adjutant: 'Adjutant',
   co: 'Commanding Officer',
   gso1: 'GSO-1',
   col_staff: 'Col Staff',
   mp_checkpost: 'MP Checkpost',
+  admin: 'Admin',
 };
 
 export const STATUS_LABELS: Record<RequestStatus, string> = {
@@ -98,7 +101,8 @@ export const STATUS_LABELS: Record<RequestStatus, string> = {
   rejected: 'Rejected',
 };
 
-export const ROLE_COLORS: Record<UserRole, string> = {
+export const ROLE_COLORS: Record<TUserRole, string> = {
+  admin: 'bg-green/15 text-info',
   mt_office: 'bg-info/15 text-info',
   adjutant: 'bg-purple-500/15 text-purple-600',
   co: 'bg-amber-500/15 text-amber-600',

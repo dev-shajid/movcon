@@ -1,12 +1,12 @@
-import { User, MovementRequest, CheckpostLog, MovementCertificate, UserRole } from '@/types';
+import { User, MovementRequest, CheckpostLog, MovementCertificate, TUserRole } from '@/types';
 
 export const mockUsers: User[] = [
-  { id: '1', name: 'Capt. Ahmed Khan', role: 'mt_office', email: 'ahmed.khan@army.mil' },
-  { id: '2', name: 'Maj. Hassan Ali', role: 'adjutant', email: 'hassan.ali@army.mil' },
-  { id: '3', name: 'Lt. Col. Imran Malik', role: 'co', email: 'imran.malik@army.mil' },
-  { id: '4', name: 'Col. Tariq Mahmood', role: 'gso1', email: 'tariq.mahmood@army.mil' },
-  { id: '5', name: 'Brig. Aslam Shah', role: 'col_staff', email: 'aslam.shah@army.mil' },
-  { id: '6', name: 'Havaldar Rashid', role: 'mp_checkpost', email: 'rashid@army.mil' },
+  { id: '1', name: 'Capt. Ahmed Khan', role: 'mt_office', email: 'ahmed.khan@army.mil', verified: true },
+  { id: '2', name: 'Maj. Hassan Ali', role: 'adjutant', email: 'hassan.ali@army.mil', verified: true },
+  { id: '3', name: 'Lt. Col. Imran Malik', role: 'co', email: 'imran.malik@army.mil', verified: true },
+  { id: '4', name: 'Col. Tariq Mahmood', role: 'gso1', email: 'tariq.mahmood@army.mil', verified: true },
+  { id: '5', name: 'Brig. Aslam Shah', role: 'col_staff', email: 'aslam.shah@army.mil', verified: true },
+  { id: '6', name: 'Havaldar Rashid', role: 'mp_checkpost', email: 'rashid@army.mil', verified: true },
 ];
 
 export const mockRequests: MovementRequest[] = [
@@ -164,11 +164,11 @@ export const mockCertificates: MovementCertificate[] = [
   },
 ];
 
-export const getUserByRole = (role: UserRole): User | undefined => {
+export const getUserByRole = (role: TUserRole): User | undefined => {
   return mockUsers.find(user => user.role === role);
 };
 
-export const getRequestsForRole = (role: UserRole): MovementRequest[] => {
+export const getRequestsForRole = (role: TUserRole): MovementRequest[] => {
   switch (role) {
     case 'mt_office':
       return mockRequests;
@@ -187,7 +187,7 @@ export const getRequestsForRole = (role: UserRole): MovementRequest[] => {
   }
 };
 
-export const getPendingCountForRole = (role: UserRole): number => {
+export const getPendingCountForRole = (role: TUserRole): number => {
   switch (role) {
     case 'adjutant':
       return mockRequests.filter(r => r.status === 'pending_adjutant').length;

@@ -1,11 +1,16 @@
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { mockUsers } from './data/mockData';
-import type { UserRole } from './types';
+import type { TUserRole } from './types';
+import { getUserProfile } from './services/auth.service';
+import { UserRole } from './lib/UserRole';
+import { AUTH_REDIRECT_URL, AUTH_ROUTES, HOME_URL, isAuthRoute, isPublicRoute, PUBLIC_ROUTES } from './route';
 
 // Define route access based on user roles
-const roleRouteAccess: Record<UserRole, string[]> = {
+const roleRouteAccess: Record<TUserRole, string[]> = {
+    admin: [
+        '/'
+    ],
     mt_office: [
         '/',
         '/requests/new',
@@ -40,9 +45,16 @@ const roleRouteAccess: Record<UserRole, string[]> = {
     ],
 };
 
+// Common routes accessible to all authenticated users
+const commonRoutes = ['/', '/profile'];
+
 // Helper function to check if user has access to a route
-const hasAccessToRoute = (userRole: UserRole, pathname: string): boolean => {
-    const allowedRoutes = roleRouteAccess[userRole];
+const hasAccessToRoute = (TUserRole: TUserRole, pathname: string): boolean => {
+    // Allow all common routes for any authenticated user
+    if (commonRoutes.includes(pathname)) {
+        return true;
+    }
+    const allowedRoutes = roleRouteAccess[TUserRole];
 
     // Check exact match first
     if (allowedRoutes.includes(pathname)) {
@@ -58,29 +70,42 @@ const hasAccessToRoute = (userRole: UserRole, pathname: string): boolean => {
     });
 };
 
-export function proxy(request: NextRequest) {
-    // Exclude static files, login page, and public APIs if needed
-    if (
-        request.nextUrl.pathname.startsWith('/_next') ||
-        request.nextUrl.pathname.startsWith('/static') ||
-        request.nextUrl.pathname === '/login' ||
-        request.nextUrl.pathname.startsWith('/api')
-    ) {
+
+export async function proxy(request: NextRequest) {
+    const path = request.nextUrl.pathname;
+
+    // Allow all public routes
+    if (isPublicRoute(path)) return NextResponse.next();
+
+    // Get user profile from Supabase
+    const profileRes = await getUserProfile();
+    const user = profileRes.success ? profileRes.data : null;
+    const validRoles = Object.values(UserRole);
+    const isRoleValid = user?.role && validRoles.includes(user.role);
+
+    // Authenticated users should not access auth routes
+    if (user && isAuthRoute(path)) {
+        return NextResponse.redirect(new URL(HOME_URL, request.url));
+    }
+
+    // Unauthenticated users can only access auth/public routes
+    if (!user && !isAuthRoute(path)) {
+        return NextResponse.redirect(new URL(AUTH_REDIRECT_URL, request.url));
+    }
+
+    // Unverified users (invalid role) can only access /waiting-verification
+    if (user && !isRoleValid) {
+        if (path !== '/waiting-verification') {
+            return NextResponse.redirect(new URL('/waiting-verification', request.url));
+        }
         return NextResponse.next();
     }
 
-    const userId = request.cookies.get('mock_user_id');
-    const user = mockUsers.find(u => u.id === userId?.value);
-
-    // Redirect to login if no user is found
-    if (!userId || !user) {
-        return NextResponse.redirect(new URL('/login', request.url));
-    }
-
-    // Check if user has access to the requested route
-    if (!hasAccessToRoute(user.role, request.nextUrl.pathname)) {
-        // Redirect to dashboard (home) if user doesn't have access
-        return NextResponse.redirect(new URL('/', request.url));
+    // Verified users: check route access
+    if (user && isRoleValid) {
+        if (!hasAccessToRoute(user.role, path)) {
+            return NextResponse.redirect(new URL('/', request.url));
+        }
     }
 
     return NextResponse.next();

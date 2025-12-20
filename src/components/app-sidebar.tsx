@@ -17,13 +17,13 @@ import {
     SidebarHeader,
     SidebarFooter,
 } from '@/components/ui/sidebar';
-import { UserRole } from '@/types';
+import { TUserRole } from '@/types';
 import { Badge } from '@/components/ui/badge';
- import { getPendingCountForRole } from '@/data/mockData';
-import { useAuth } from '@/context/auth.context';
+import { getPendingCountForRole } from '@/data/mockData';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import AppSidebarUser from './app-sidebar-user';
+import { useUserStore } from '@/hooks/use-user-store';
 
 interface ISidebarItem {
     title: string;
@@ -32,7 +32,7 @@ interface ISidebarItem {
     items?: ISidebarItem[];
 }
 
-const getMenuItemsForRole = (role: UserRole) => {
+const getMenuItemsForRole = (role: TUserRole) => {
     const baseItems = [
         { title: 'Dashboard', url: '/', icon: LayoutDashboard },
     ];
@@ -66,7 +66,7 @@ const getMenuItemsForRole = (role: UserRole) => {
 };
 
 export function AppSidebar() {
-    const { user } = useAuth();
+    const { user } = useUserStore();
     const pathname = usePathname()
 
     function isItemActive(item: ISidebarItem): boolean {
@@ -74,10 +74,8 @@ export function AppSidebar() {
             (item.items ? item.items.some(isItemActive) : false)
     }
 
-    if (!user) return null;
-
-    const menuItems = getMenuItemsForRole(user.role);
-    const pendingCount = getPendingCountForRole(user.role);
+    const menuItems = user?.role ? getMenuItemsForRole(user?.role) : [];
+    const pendingCount = user?.role ? getPendingCountForRole(user?.role) : 0;
 
     return (
         <Sidebar>
