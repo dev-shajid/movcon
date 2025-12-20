@@ -3,7 +3,7 @@
 import { createClient } from '@/supabase/server';
 import { cacheTag, revalidateTag } from 'next/cache';
 
-const supabaseAdmin = await createClient(true);
+const supabaseAdmin = await createClient();
 export async function getAllUsers() {
     'use cache';
     cacheTag('users');
