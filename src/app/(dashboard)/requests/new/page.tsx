@@ -6,14 +6,33 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { ArrowLeft, Send, Truck, MapPin, Calendar } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useUserStore } from '@/hooks/use-user-store';
+import { useForm, Controller } from 'react-hook-form';
+import * as z from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Field, FieldError, FieldGroup, FieldLabel, FieldDescription } from '@/components/ui/field';
+
+
+const MovementRequestSchema = z.object({
+    vehicleNumber: z.string().min(1, 'Vehicle Number is required.'),
+    vehicleType: z.string().min(1, 'Vehicle Type is required.'),
+    driverName: z.string().min(1, 'Driver Name is required.'),
+    driverContact: z.string().min(1, 'Driver Contact is required.'),
+    purpose: z.string().min(1, 'Purpose is required.'),
+    destination: z.string().min(1, 'Destination is required.'),
+    route: z.string().min(1, 'Route is required.'),
+    departureDate: z.string().min(1, 'Departure Date is required.'),
+    departureTime: z.string().min(1, 'Departure Time is required.'),
+    returnDate: z.string().min(1, 'Expected Return Date is required.'),
+    returnTime: z.string().min(1, 'Expected Return Time is required.'),
+});
 
 export default function NewRequest() {
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const router = useRouter();
     const { user } = useUserStore();
 
@@ -28,38 +47,51 @@ export default function NewRequest() {
         );
     }
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        setIsSubmitting(true);
+    const form = useForm<z.infer<typeof MovementRequestSchema>>({
+        resolver: zodResolver(MovementRequestSchema),
+        defaultValues: {
+            vehicleNumber: 'ARMY-4521',
+            vehicleType: 'Toyota Land Cruiser',
+            driverName: 'Cpl Saleem',
+            driverContact: '+92-321-1234567',
+            purpose: 'Official duty - Equipment transport to forward base',
+            destination: 'Forward Base Delta',
+            route: 'HQ → Checkpoint Alpha → Forward Base Delta',
+            departureDate: '2025-12-25',
+            departureTime: '08:00',
+            returnDate: '2025-12-26',
+            returnTime: '18:00',
+        },
+    });
 
-        const formData = new FormData(e.currentTarget);
-        const data = {
-            vehicleNumber: formData.get('vehicleNumber'),
-            vehicleType: formData.get('vehicleType'),
-            driverName: formData.get('driverName'),
-            driverContact: formData.get('driverContact'),
-            purpose: formData.get('purpose'),
-            destination: formData.get('destination'),
-            route: formData.get('route'),
-            departureDate: formData.get('departureDate'),
-            departureTime: formData.get('departureTime'),
-            expectedReturnDate: formData.get('returnDate'),
-            expectedReturnTime: formData.get('returnTime'),
-            createdBy: user?.id,
-        };
-
+    async function onSubmit(data: z.infer<typeof MovementRequestSchema>) {
+        setIsLoading(true);
+        setError(null);
         try {
-            await createRequest(data);
+            await createRequest({
+                vehicleNumber: data.vehicleNumber,
+                vehicleType: data.vehicleType,
+                driverName: data.driverName,
+                driverContact: data.driverContact,
+                purpose: data.purpose,
+                destination: data.destination,
+                route: data.route,
+                departureDate: data.departureDate,
+                departureTime: data.departureTime,
+                expectedReturnDate: data.returnDate, // map to expectedReturnDate
+                expectedReturnTime: data.returnTime, // map to expectedReturnTime
+                createdBy: user?.id,
+            });
             toast('Request Submitted', {
                 description: 'Your movement request has been submitted for approval.',
             });
             router.push('/requests');
         } catch (err) {
-            toast.error('Failed to submit request');
+            setError('Failed to submit request');
         } finally {
-            setIsSubmitting(false);
+            setIsLoading(false);
         }
-    };
+    }
 
     return (
         <div className="max-w-3xl mx-auto space-y-6">
@@ -77,117 +109,199 @@ export default function NewRequest() {
                 </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Vehicle Details */}
-                <Card className="animate-fade-in">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg">
-                            <Truck className="h-5 w-5" />
-                            Vehicle Details
-                        </CardTitle>
-                        <CardDescription>
-                            Enter the vehicle and driver information
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid gap-4 sm:grid-cols-2">
-                        <div className="space-y-2">
-                            <Label htmlFor="vehicleNumber">Vehicle Number *</Label>
-                            <Input id="vehicleNumber" name="vehicleNumber" placeholder="e.g., ARMY-4521" required />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="vehicleType">Vehicle Type *</Label>
-                            <Input id="vehicleType" name="vehicleType" placeholder="e.g., Toyota Land Cruiser" required />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="driverName">Driver Name *</Label>
-                            <Input id="driverName" name="driverName" placeholder="e.g., Cpl Saleem" required />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="driverContact">Driver Contact *</Label>
-                            <Input id="driverContact" name="driverContact" placeholder="e.g., +92-321-1234567" required />
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Movement Details */}
-                <Card className="animate-fade-in" style={{ animationDelay: '100ms' }}>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg">
-                            <MapPin className="h-5 w-5" />
-                            Movement Details
-                        </CardTitle>
-                        <CardDescription>
-                            Specify the purpose and route of movement
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="purpose">Purpose of Movement *</Label>
-                            <Textarea
-                                id="purpose"
-                                name="purpose"
-                                placeholder="e.g., Official duty - Equipment transport to forward base"
-                                required
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <FieldGroup>
+                    {/* Vehicle Details */}
+                    <Card className="animate-fade-in">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-lg">
+                                <Truck className="h-5 w-5" />
+                                Vehicle Details
+                            </CardTitle>
+                            <CardDescription>
+                                Enter the vehicle and driver information
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="grid gap-4 sm:grid-cols-2">
+                            <Controller
+                                name="vehicleNumber"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor={field.name}>Vehicle Number</FieldLabel>
+                                        <Input {...field} id={field.name} type="text" aria-invalid={fieldState.invalid} placeholder="e.g., ARMY-4521" />
+                                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                                    </Field>
+                                )}
                             />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="destination">Destination *</Label>
-                            <Input id="destination" name="destination" placeholder="e.g., Forward Base Delta" required />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="route">Route *</Label>
-                            <Input id="route" name="route" placeholder="e.g., HQ → Checkpoint Alpha → Forward Base Delta" required />
-                        </div>
-                    </CardContent>
-                </Card>
+                            <Controller
+                                name="vehicleType"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor={field.name}>Vehicle Type</FieldLabel>
+                                        <Input {...field} id={field.name} type="text" aria-invalid={fieldState.invalid} placeholder="e.g., Toyota Land Cruiser" />
+                                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                name="driverName"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor={field.name}>Driver Name</FieldLabel>
+                                        <Input {...field} id={field.name} type="text" aria-invalid={fieldState.invalid} placeholder="e.g., Cpl Saleem" />
+                                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                name="driverContact"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor={field.name}>Driver Contact</FieldLabel>
+                                        <Input {...field} id={field.name} type="text" aria-invalid={fieldState.invalid} placeholder="e.g., +92-321-1234567" />
+                                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                                    </Field>
+                                )}
+                            />
+                        </CardContent>
+                    </Card>
 
-                {/* Timing Details */}
-                <Card className="animate-fade-in" style={{ animationDelay: '200ms' }}>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg">
-                            <Calendar className="h-5 w-5" />
-                            Schedule
-                        </CardTitle>
-                        <CardDescription>
-                            Set the departure and expected return times
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid gap-4 sm:grid-cols-2">
-                        <div className="space-y-2">
-                            <Label htmlFor="departureDate">Departure Date *</Label>
-                            <Input type="date" id="departureDate" name="departureDate" required />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="departureTime">Departure Time *</Label>
-                            <Input type="time" id="departureTime" name="departureTime" required />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="returnDate">Expected Return Date *</Label>
-                            <Input type="date" id="returnDate" name="returnDate" required />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="returnTime">Expected Return Time *</Label>
-                            <Input type="time" id="returnTime" name="returnTime" required />
-                        </div>
-                    </CardContent>
-                </Card>
+                    {/* Movement Details */}
+                    <Card className="animate-fade-in" style={{ animationDelay: '100ms' }}>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-lg">
+                                <MapPin className="h-5 w-5" />
+                                Movement Details
+                            </CardTitle>
+                            <CardDescription>
+                                Specify the purpose and route of movement
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <Controller
+                                name="purpose"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor={field.name}>Purpose of Movement</FieldLabel>
+                                        <Textarea {...field} id={field.name} aria-invalid={fieldState.invalid} placeholder="e.g., Official duty - Equipment transport to forward base" />
+                                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                name="destination"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor={field.name}>Destination</FieldLabel>
+                                        <Input {...field} id={field.name} type="text" aria-invalid={fieldState.invalid} placeholder="e.g., Forward Base Delta" />
+                                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                name="route"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor={field.name}>Route</FieldLabel>
+                                        <Input {...field} id={field.name} type="text" aria-invalid={fieldState.invalid} placeholder="e.g., HQ → Checkpoint Alpha → Forward Base Delta" />
+                                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                                    </Field>
+                                )}
+                            />
+                        </CardContent>
+                    </Card>
 
-                {/* Submit Button */}
-                <div className="flex justify-end gap-3">
-                    <Button type="button" variant="outline" onClick={() => router.back()}>
-                        Cancel
-                    </Button>
-                    <Button type="submit" disabled={isSubmitting}>
-                        {isSubmitting ? (
-                            <>Submitting...</>
-                        ) : (
-                            <>
-                                <Send className="h-4 w-4 mr-2" />
-                                Submit Request
-                            </>
-                        )}
-                    </Button>
-                </div>
+                    {/* Timing Details */}
+                    <Card className="animate-fade-in" style={{ animationDelay: '200ms' }}>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-lg">
+                                <Calendar className="h-5 w-5" />
+                                Schedule
+                            </CardTitle>
+                            <CardDescription>
+                                Set the departure and expected return times
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="grid gap-4 sm:grid-cols-2">
+                            <Controller
+                                name="departureDate"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor={field.name}>Departure Date</FieldLabel>
+                                        <Input {...field} id={field.name} type="date" aria-invalid={fieldState.invalid} />
+                                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                name="departureTime"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor={field.name}>Departure Time</FieldLabel>
+                                        <Input {...field} id={field.name} type="time" aria-invalid={fieldState.invalid} />
+                                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                name="returnDate"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor={field.name}>Expected Return Date</FieldLabel>
+                                        <Input {...field} id={field.name} type="date" aria-invalid={fieldState.invalid} />
+                                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                name="returnTime"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor={field.name}>Expected Return Time</FieldLabel>
+                                        <Input {...field} id={field.name} type="time" aria-invalid={fieldState.invalid} />
+                                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                                    </Field>
+                                )}
+                            />
+                        </CardContent>
+                    </Card>
+
+                    {error && (
+                        <div className="rounded-md bg-destructive/7 border border-destructive/20 p-3 text-sm text-destructive">
+                            {error}
+                        </div>
+                    )}
+
+                    {/* Submit Button */}
+                    <Field>
+                        <div className="flex justify-end gap-3">
+                            <Button type="button" variant="outline" onClick={() => router.back()}>
+                                Cancel
+                            </Button>
+                            <Button type="submit" disabled={isLoading}>
+                                {isLoading ? (
+                                    <>Submitting...</>
+                                ) : (
+                                    <>
+                                        <Send className="h-4 w-4 mr-2" />
+                                        Submit Request
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+                    </Field>
+                </FieldGroup>
             </form>
         </div>
     );

@@ -40,7 +40,6 @@ export interface IRejectRequestParams {
 export interface IGetAllRequestsResponse {
     requests: IMovementRequest[];
     total: number;
-    pending: number;
     approved: number;
     rejected: number;
 }
@@ -220,7 +219,6 @@ export async function getAllRequests(role: string | null = null): Promise<IGetAl
     return {
         requests: plainDocs,
         total: plainDocs.length,
-        pending: plainDocs.filter((r: any) => r.status.startsWith('pending_')).length,
         approved: plainDocs.filter((r: any) => r.status === 'approved').length,
         rejected: plainDocs.filter((r: any) => r.status === 'rejected').length,
     }
@@ -251,7 +249,7 @@ export async function getCheckpostRequests(role: string | null = null): Promise<
 
 
 
-export async function createRequest(data: ICreateRequestData): Promise<IMovementRequest | IMovementRequest[]> {
+export async function createRequest(data: ICreateRequestData) {
     await connectToDatabase();
 
     // Generate a unique request number (e.g., MR-YYYY-XXX)
@@ -260,18 +258,12 @@ export async function createRequest(data: ICreateRequestData): Promise<IMovement
     const requestNumber = `MR-${year}-${String(count).padStart(3, '0')}`;
 
     // Set default status and timestamps
-    const now = new Date();
     const movementRequest = {
         ...data,
         requestNumber,
         status: 'pending_adjutant',
-        createdAt: now.toISOString(),
         approvalHistory: [],
     };
 
-    const doc = await MovementRequest.create(movementRequest);
-    if (Array.isArray(doc)) {
-        return toPlain(doc.map((d) => d.toObject()));
-    }
-    return doc
+    await MovementRequest.create(movementRequest);
 }

@@ -24,7 +24,6 @@ export interface IMovementRequest extends Document {
     expectedReturnDate: string;
     expectedReturnTime: string;
     status: RequestStatus;
-    requestCreatedAt: string;  // Renamed to avoid conflict
     createdBy: string;
     approvalHistory: IApprovalRecord[];
 }
@@ -52,10 +51,9 @@ const MovementRequestSchema = new Schema<IMovementRequest>({
     expectedReturnDate: { type: String, required: true },
     expectedReturnTime: { type: String, required: true },
     status: { type: String, required: true },
-    requestCreatedAt: { type: String, required: true },  // Renamed
     createdBy: { type: String, required: true },
     approvalHistory: { type: [ApprovalRecordSchema], default: [] },
-}, { 
+}, {
     timestamps: true,
 });
 

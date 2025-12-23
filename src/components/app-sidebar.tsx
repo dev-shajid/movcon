@@ -19,7 +19,6 @@ import {
 } from '@/components/ui/sidebar';
 import { TUserRole } from '@/types';
 import { Badge } from '@/components/ui/badge';
-import { getPendingCountForRole } from '@/data/mockData';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import AppSidebarUser from './app-sidebar-user';
@@ -68,10 +67,8 @@ const getMenuItemsForRole = (role: TUserRole) => {
 
 export function AppSidebar() {
 
-    const { user } = useUserStore();
+    const { user, pendingRequests } = useUserStore();
     const pathname = usePathname();
-    const [pendingCount, setPendingCount] = useState<number>(0);
-    const [pendingLoading, setPendingLoading] = useState(false);
 
     function isItemActive(item: ISidebarItem): boolean {
         return item.url === pathname ||
@@ -79,25 +76,6 @@ export function AppSidebar() {
     }
 
     const menuItems = user?.role ? getMenuItemsForRole(user?.role) : [];
-
-    useEffect(() => {
-        let ignore = false;
-        async function fetchPending() {
-            if (user?.role) {
-                setPendingLoading(true);
-                try {
-                    const count = await getPendingCountForRole(user.role);
-                    if (!ignore) setPendingCount(count);
-                } finally {
-                    if (!ignore) setPendingLoading(false);
-                }
-            } else {
-                setPendingCount(0);
-            }
-        }
-        fetchPending();
-        return () => { ignore = true; };
-    }, [user?.role]);
 
     return (
         <Sidebar>
@@ -117,7 +95,7 @@ export function AppSidebar() {
                 <SidebarGroup>
                     <SidebarMenu>
                         {menuItems.map((item, index) => {
-                            const showBadge = item.title === 'Requested Movements' && pendingCount > 0;
+                            const showBadge = item.title === 'Requested Movements' && pendingRequests.length > 0;
 
                             return (
                                 <Link href={item.url} key={index}>
@@ -129,7 +107,7 @@ export function AppSidebar() {
                                         <span className="flex-1">{item.title}</span>
                                         {showBadge && (
                                             <Badge variant='warning' className="ml-auto">
-                                                {pendingCount}
+                                                {pendingRequests.length}
                                             </Badge>
                                         )}
                                     </SidebarMenuButton>

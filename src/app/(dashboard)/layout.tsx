@@ -10,14 +10,17 @@ import AppHeader from '@/components/app-header'
 import { useUserStore } from '@/hooks/use-user-store'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getUserProfile } from '@/services/auth.service'
+import { getRequestedMovementsForRole } from '@/services/request.service'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user, login } = useUserStore();
+  const { user, login, setPendingRequests } = useUserStore();
 
   async function handleCurrentUser() {
     const res = await getUserProfile()
     if (res.data) {
       login(res.data)
+      const pendReqs = await getRequestedMovementsForRole(res.data.role);
+      setPendingRequests(pendReqs);
     }
   }
 

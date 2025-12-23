@@ -9,12 +9,15 @@ import { toast } from 'sonner';
 import { approveRequest, rejectRequest } from '@/services/request.service';
 import { useState } from 'react';
 import { IMovementRequest } from '@/models/MovementRequest';
+import { useUserStore } from '@/hooks/use-user-store';
 
-export default function RequestedMovementsTable({ requests, user }: { requests: IMovementRequest[], user: any }) {
+export default function RequestedMovementsTable() {
     const router = useRouter();
+    const { user, pendingRequests, setPendingRequests } = useUserStore()
     const [loadingId, setLoadingId] = useState<string | null>(null);
 
     async function handleApprove(request: IMovementRequest) {
+        if (!user) return;
         setLoadingId(String(request._id));
         try {
             await approveRequest({
@@ -26,6 +29,7 @@ export default function RequestedMovementsTable({ requests, user }: { requests: 
                 },
             });
             toast("Request Approved", { description: `Request ${request.requestNumber} has been approved.` });
+            setPendingRequests(pendingRequests.filter(r => r._id !== request._id));
         } catch (err: any) {
             toast.error("Approval failed", { description: err.message || 'Error approving request.' });
         } finally {
@@ -34,6 +38,7 @@ export default function RequestedMovementsTable({ requests, user }: { requests: 
     }
 
     async function handleReject(request: IMovementRequest) {
+        if (!user) return;
         setLoadingId(String(request._id));
         try {
             await rejectRequest({
@@ -46,7 +51,7 @@ export default function RequestedMovementsTable({ requests, user }: { requests: 
                 remarks: '',
             });
             toast.error("Request Rejected", { description: `Request ${request.requestNumber} has been rejected.` });
-            router.refresh();
+            setPendingRequests(pendingRequests.filter(r => r._id !== request._id));
         } catch (err: any) {
             toast.error("Rejection failed", { description: err.message || 'Error rejecting request.' });
         } finally {
@@ -54,7 +59,8 @@ export default function RequestedMovementsTable({ requests, user }: { requests: 
         }
     }
 
-    if (requests.length === 0) return (
+    if(!user) return null;
+    if (pendingRequests.length === 0) return (
         <div className="text-center py-12 bg-muted/50 rounded-lg">
             <FileText className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
             <p className="text-muted-foreground">No requests found</p>
@@ -75,7 +81,7 @@ export default function RequestedMovementsTable({ requests, user }: { requests: 
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {requests.map((request, i) => (
+                {pendingRequests.map((request, i) => (
                     <TableRow key={i}>
                         <TableCell className="font-medium">{request.requestNumber}</TableCell>
                         <TableCell>

@@ -1,13 +1,15 @@
 // src/store/userStore.ts
 import { create } from 'zustand';
-import { User } from "@supabase/supabase-js";
 import { UserProfile } from '@/services/auth.service';
+import { IMovementRequest } from '@/models/MovementRequest';
 
 interface UserState {
     user: UserProfile | null;
     isLoggedIn: boolean;
     login: (userData: UserProfile) => void;
     logout: () => void;
+    pendingRequests: IMovementRequest[]
+    setPendingRequests: (requests: IMovementRequest[]) => void;
 }
 
 export const useUserStore = create<UserState>((set) => ({
@@ -22,5 +24,10 @@ export const useUserStore = create<UserState>((set) => ({
         set({
             user: null,
             isLoggedIn: false,
+        }),
+    pendingRequests: [],
+    setPendingRequests: (requests: IMovementRequest[]) =>
+        set({
+            pendingRequests: requests,
         }),
 }));

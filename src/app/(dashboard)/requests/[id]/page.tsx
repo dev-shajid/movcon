@@ -7,7 +7,6 @@ import { getRequestById } from '@/services/request.service';
 import { getCertificateByRequestId } from '@/services/certificate.service';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import {
     ArrowLeft,
     Truck,
@@ -16,21 +15,15 @@ import {
     Clock,
     User,
     Phone,
-    FileCheck,
     Download,
-    CheckCircle,
-    XCircle
 } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { formatDate } from '@/lib/utils';
-import { toast } from 'sonner';
-import { useUserStore } from '@/hooks/use-user-store';
+import RequestLoading from '@/components/skeleton/request-loading';
 
 export default function RequestDetailsPage() {
     const { id } = useParams<{ id: string }>();
     const router = useRouter();
-    const { user } = useUserStore();
-    const [remarks, setRemarks] = useState('');
     const [request, setRequest] = useState<any>(null);
     const [certificate, setCertificate] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -57,13 +50,7 @@ export default function RequestDetailsPage() {
         fetchData();
     }, [id]);
 
-    if (loading) {
-        return (
-            <div className="text-center py-12">
-                <p className="text-muted-foreground">Loading...</p>
-            </div>
-        );
-    }
+    if (loading) return <RequestLoading />;
 
     if (!request) {
         return (
@@ -76,28 +63,7 @@ export default function RequestDetailsPage() {
             </div>
         );
     }
-
-    const canApprove = () => {
-        if (!user) return false;
-        const roleMap: Record<string, string> = {
-            adjutant: 'pending_adjutant',
-            co: 'pending_co',
-            gso1: 'pending_gso1',
-            col_staff: 'pending_col_staff',
-        };
-        return roleMap[user.role] === request.status;
-    };
-
-    const handleApproval = (action: 'approved' | 'rejected') => {
-        // TODO: Implement real approval logic here
-        const description = `The request has been ${action}.`;
-        action === 'approved' ? toast.success('Request Approved', {
-            description,
-        }) : toast.error('Request Rejected', {
-            description,
-        });
-    };
-
+    
     return (
         <div className="space-y-6">
             {/* Header */}
@@ -201,44 +167,6 @@ export default function RequestDetailsPage() {
                             </div>
                         </CardContent>
                     </Card>
-
-                    {/* Approval Actions */}
-                    {canApprove() && (
-                        <Card className="border-warning/50 animate-fade-in" style={{ animationDelay: '200ms' }}>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2 text-lg">
-                                    <FileCheck className="h-5 w-5" />
-                                    Your Decision
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div>
-                                    <p className="text-sm text-muted-foreground mb-2">Remarks (Optional)</p>
-                                    <Textarea
-                                        placeholder="Add any remarks or notes..."
-                                        value={remarks}
-                                        onChange={(e) => setRemarks(e.target.value)}
-                                    />
-                                </div>
-                                <div className="flex gap-3">
-                                    <Button
-                                        className="flex-1 bg-success hover:bg-success/80 text-white"
-                                        onClick={() => handleApproval('approved')}
-                                    >
-                                        <CheckCircle className="h-4 w-4 mr-2" />
-                                        Approve
-                                    </Button>
-                                    <Button
-                                        className="flex-1 bg-destructive hover:bg-destructive/80 text-white"
-                                        onClick={() => handleApproval('rejected')}
-                                    >
-                                        <XCircle className="h-4 w-4 mr-2" />
-                                        Reject
-                                    </Button>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
                 </div>
 
                 {/* Approval Timeline */}
