@@ -11,7 +11,7 @@ import {
     Avatar,
     AvatarFallback,
 } from "@/components/ui/avatar"
-import { ChevronsUpDown, Key, LogOut } from 'lucide-react'
+import { ChevronsUpDown, Key, LogOut, Moon, Sun } from 'lucide-react'
 import { logout } from '@/services/auth.service'
 import { useUserStore } from '@/hooks/use-user-store'
 import { useOverlay } from '@/hooks/use-overlay'
@@ -20,12 +20,14 @@ import { AuthError } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
 import { AUTH_REDIRECT_URL } from '@/route'
 import { Skeleton } from './ui/skeleton'
+import { useTheme } from 'next-themes'
 
 export default function AppSidebarUser() {
     const { isMobile } = useSidebar()
     const userStore = useUserStore()
     const { showOverlay, hideOverlay } = useOverlay()
     const router = useRouter()
+    const { theme, setTheme } = useTheme();
 
     async function handleLogout() {
         try {
@@ -94,6 +96,23 @@ export default function AppSidebarUser() {
                                         <Key />
                                         Profile
                                     </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                        onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                                        className='cursor-pointer'
+                                    >
+                                        {
+                                            theme == "dark" ?
+                                                <>
+                                                    <Sun className='h-4 w-4' />
+                                                    <span>Light</span>
+                                                </> :
+                                                <>
+                                                    <Moon className='h-4 w-4' />
+                                                    <span>Dark</span>
+                                                </>
+                                        }
+                                    </DropdownMenuItem>
+
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem
                                         variant='destructive'
@@ -107,7 +126,6 @@ export default function AppSidebarUser() {
                         </SidebarMenuItem>
                         :
                         <SidebarMenuItem>
-                            {/* Add skeleton loading */}
                             <Skeleton className='w-full h-8 rounded-md' />
                         </SidebarMenuItem>
                 }

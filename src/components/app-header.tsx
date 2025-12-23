@@ -26,11 +26,11 @@ export default function AppHeader() {
       </div>
 
       <div className="flex items-center gap-4">
-        {/* {user && user?.role && (
+        {user && user?.role && (
           <Badge variant="outline" className="hidden sm:flex">
             {ROLE_LABELS[user.role]}
           </Badge>
-        )} */}
+        )}
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
           <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-destructive" />

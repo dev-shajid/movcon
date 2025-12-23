@@ -15,15 +15,15 @@ export function ApprovalTimeline({ history, currentStatus }: ApprovalTimelinePro
     if (record) {
       return record.action;
     }
-
+    
     const currentPendingRole = currentStatus.replace('pending_', '') as TUserRole;
     const currentIndex = APPROVAL_ORDER.indexOf(currentPendingRole);
     const roleIndex = APPROVAL_ORDER.indexOf(role);
-
+    
     if (roleIndex === currentIndex) {
       return 'pending';
     }
-
+    
     return 'waiting';
   };
 

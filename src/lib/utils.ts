@@ -15,3 +15,7 @@ export const formatDate = (dateString?: Date, formatString: string='MMM dd, yyyy
     return "Invalid date";
   }
 };
+
+export function wait(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}

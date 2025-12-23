@@ -1,5 +1,6 @@
 'use client'
 
+import { createRequest } from '@/services/request.service';
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,24 +10,55 @@ import { Label } from '@/components/ui/label';
 import { ArrowLeft, Send, Truck, MapPin, Calendar } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { useUserStore } from '@/hooks/use-user-store';
 
 export default function NewRequest() {
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const router = useRouter()
+    const router = useRouter();
+    const { user } = useUserStore();
+
+    // Only allow mt_office to access this page
+    if (!user || user.role !== 'mt_office') {
+        return (
+            <div className="max-w-xl mx-auto mt-16 text-center">
+                <h2 className="text-2xl font-bold mb-2">Access Denied</h2>
+                <p className="text-muted-foreground mb-4">You do not have permission to create a new movement request.</p>
+                <Button variant="outline" onClick={() => router.push('/requests')}>Go to Requests</Button>
+            </div>
+        );
+    }
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setIsSubmitting(true);
 
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        const formData = new FormData(e.currentTarget);
+        const data = {
+            vehicleNumber: formData.get('vehicleNumber'),
+            vehicleType: formData.get('vehicleType'),
+            driverName: formData.get('driverName'),
+            driverContact: formData.get('driverContact'),
+            purpose: formData.get('purpose'),
+            destination: formData.get('destination'),
+            route: formData.get('route'),
+            departureDate: formData.get('departureDate'),
+            departureTime: formData.get('departureTime'),
+            expectedReturnDate: formData.get('returnDate'),
+            expectedReturnTime: formData.get('returnTime'),
+            createdBy: user?.id,
+        };
 
-        toast('Request Submitted', {
-            description: 'Your movement request has been submitted for approval. (Demo mode)',
-        });
-
-        setIsSubmitting(false);
-        router.push('/requests');
+        try {
+            await createRequest(data);
+            toast('Request Submitted', {
+                description: 'Your movement request has been submitted for approval.',
+            });
+            router.push('/requests');
+        } catch (err) {
+            toast.error('Failed to submit request');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -60,19 +92,19 @@ export default function NewRequest() {
                     <CardContent className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-2">
                             <Label htmlFor="vehicleNumber">Vehicle Number *</Label>
-                            <Input id="vehicleNumber" placeholder="e.g., ARMY-4521" required />
+                            <Input id="vehicleNumber" name="vehicleNumber" placeholder="e.g., ARMY-4521" required />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="vehicleType">Vehicle Type *</Label>
-                            <Input id="vehicleType" placeholder="e.g., Toyota Land Cruiser" required />
+                            <Input id="vehicleType" name="vehicleType" placeholder="e.g., Toyota Land Cruiser" required />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="driverName">Driver Name *</Label>
-                            <Input id="driverName" placeholder="e.g., Cpl Saleem" required />
+                            <Input id="driverName" name="driverName" placeholder="e.g., Cpl Saleem" required />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="driverContact">Driver Contact *</Label>
-                            <Input id="driverContact" placeholder="e.g., +92-321-1234567" required />
+                            <Input id="driverContact" name="driverContact" placeholder="e.g., +92-321-1234567" required />
                         </div>
                     </CardContent>
                 </Card>
@@ -93,17 +125,18 @@ export default function NewRequest() {
                             <Label htmlFor="purpose">Purpose of Movement *</Label>
                             <Textarea
                                 id="purpose"
+                                name="purpose"
                                 placeholder="e.g., Official duty - Equipment transport to forward base"
                                 required
                             />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="destination">Destination *</Label>
-                            <Input id="destination" placeholder="e.g., Forward Base Delta" required />
+                            <Input id="destination" name="destination" placeholder="e.g., Forward Base Delta" required />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="route">Route *</Label>
-                            <Input id="route" placeholder="e.g., HQ → Checkpoint Alpha → Forward Base Delta" required />
+                            <Input id="route" name="route" placeholder="e.g., HQ → Checkpoint Alpha → Forward Base Delta" required />
                         </div>
                     </CardContent>
                 </Card>
@@ -122,19 +155,19 @@ export default function NewRequest() {
                     <CardContent className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-2">
                             <Label htmlFor="departureDate">Departure Date *</Label>
-                            <Input type="date" id="departureDate" required />
+                            <Input type="date" id="departureDate" name="departureDate" required />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="departureTime">Departure Time *</Label>
-                            <Input type="time" id="departureTime" required />
+                            <Input type="time" id="departureTime" name="departureTime" required />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="returnDate">Expected Return Date *</Label>
-                            <Input type="date" id="returnDate" required />
+                            <Input type="date" id="returnDate" name="returnDate" required />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="returnTime">Expected Return Time *</Label>
-                            <Input type="time" id="returnTime" required />
+                            <Input type="time" id="returnTime" name="returnTime" required />
                         </div>
                     </CardContent>
                 </Card>

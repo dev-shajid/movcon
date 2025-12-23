@@ -4,8 +4,7 @@ import { createClient } from '@/supabase/server'
 import z from 'zod';
 import { SignupSchema } from '@/components/signup-form';
 import { TUserRole } from '@/types';
-import { UserRole } from '@/lib/UserRole';
-import { revalidateTag } from 'next/cache';
+import { cacheTag, revalidateTag } from 'next/cache';
 
 
 interface Response<T> {
@@ -32,7 +31,7 @@ export async function signup(data: z.infer<typeof SignupSchema>): Promise<Respon
   // we include the `name` in user_metadata
 
   const { password, ...rest } = data
-  const { error, data: authData } = await supabase.auth.signUp({
+  const { error } = await supabase.auth.signUp({
     email: data.email,
     password: password,
     options: {
@@ -82,15 +81,15 @@ export interface UserProfile {
 export async function getUserProfile(): Promise<Response<UserProfile>> {
   const supabase = await createClient()
   const { data, error } = await supabase.auth.getUser()
-
+  
   if (error) {
     return { success: false, error: error.message }
   }
-
+  
   if (!data.user) {
     return { success: false, error: 'User not found' }
   }
-
+  
   const { user } = data
   const metadata = user.user_metadata as any
 
@@ -102,7 +101,7 @@ export async function getUserProfile(): Promise<Response<UserProfile>> {
     role: metadata?.role || null,
     ...metadata,
   }
-
+  
   return { success: true, data: profile }
 }
 
@@ -124,30 +123,3 @@ export async function resetPassword(email: string): Promise<Response<null>> {
   return { success: true }
 }
 
-export async function updateOwnRole(role: 'admin' | 'user'): Promise<Response<null>> {
-  const supabase = await createClient()
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
-
-  if (userError) {
-    return { success: false, error: userError.message }
-  }
-
-  if (!user) {
-    return { success: false, error: 'No authenticated user' }
-  }
-
-  const { error } = await supabase
-    .from('users')
-    .update({ role })
-    .eq('id', user.id)
-
-  await supabase.auth.updateUser({
-    data: { role }
-  })
-
-  if (error) {
-    return { success: false, error: error.message }
-  }
-
-  return { success: true }
-}

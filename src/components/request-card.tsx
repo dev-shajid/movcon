@@ -3,13 +3,13 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from './status-badge';
-import { MovementRequest } from '@/types';
 import { Calendar, MapPin, Truck, User, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { formatDate } from '@/lib/utils';
+import { IMovementRequest } from '@/models/MovementRequest';
 
 interface RequestCardProps {
-  request: MovementRequest;
+  request: IMovementRequest;
   showActions?: boolean;
 }
 
@@ -55,7 +55,7 @@ export function RequestCard({ request, showActions = true }: RequestCardProps) {
           <Button
             variant="outline"
             className="w-full group"
-            onClick={() => router.push(`/requests/${request.id}`)}
+            onClick={() => router.push(`/requests/${request._id}`)}
           >
             View Details
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />

@@ -6,9 +6,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Select, SelectItem, SelectTrigger, SelectValue, SelectContent } from '@/components/ui/select';
 import { ROLE_LABELS, TUserRole } from '@/types';
-import React, { useEffect, useState } from 'react';
-import { getAllUsers } from '@/services/admin.service';
+import { useEffect, useState } from 'react';
+import { getAllUsers, verifyUser } from '@/services/admin.service';
 import { UserRole } from '@/lib/UserRole';
+import { toast } from 'sonner';
 
 
 type User = {
@@ -27,13 +28,16 @@ export default function AdminDashboard() {
     const [updating, setUpdating] = useState<string | null>(null);
     const [roleSelections, setRoleSelections] = useState<Record<string, TUserRole>>({});
 
-    useEffect(() => {
-        setIsLoadingUsers(true);
+    async function handleUsers() {
         getAllUsers().then((data) => {
-            // Supabase admin returns { users: [...] }
             setUsers(data?.users || []);
             setIsLoadingUsers(false);
         });
+    }
+
+    useEffect(() => {
+        setIsLoadingUsers(true);
+        handleUsers();
     }, []);
 
     // Unverified: no role; Verified: has role
@@ -48,26 +52,24 @@ export default function AdminDashboard() {
         const role = roleSelections[userId];
         if (!role) return;
         setUpdating(userId);
-        await fetch('/api/admin/verify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId, role }),
-        });
-        // Refresh users
-        getAllUsers().then((data) => {
-            setUsers(data?.users || []);
-            setUpdating(null);
-            setRoleSelections((prev) => {
-                const copy = { ...prev };
-                delete copy[userId];
-                return copy;
-            });
-        });
+        const res = await verifyUser(userId, role);
+        if (res) {
+            toast.success('User role updated successfully');
+            handleUsers();
+        } else {
+            toast.error('Failed to update user role');
+        }
+        setUpdating(null);
     };
 
     return (
         <div className="max-w-5xl mx-auto py-8">
-            <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold text-foreground">Welcome, Admin</h1>
+                    <p className="text-muted-foreground">Admin Dashboard</p>
+                </div>
+            </div>
 
             <UserTableSkeleton show={isLoadingUsers} />
             <div className="mb-10">

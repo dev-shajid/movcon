@@ -1,7 +1,7 @@
-import mongoose, { Schema, Document, models, model } from 'mongoose';
+import { Schema, Document, models, model } from 'mongoose';
 
 export interface ICheckpostLog extends Document {
-    requestId: string;
+    requestId: Schema.Types.ObjectId;
     vehicleNumber: string;
     outTime?: string;
     inTime?: string;
@@ -10,7 +10,11 @@ export interface ICheckpostLog extends Document {
 }
 
 const CheckpostLogSchema = new Schema<ICheckpostLog>({
-    requestId: { type: String, required: true },
+    requestId: { 
+        type: Schema.Types.ObjectId, 
+        ref: 'MovementRequest',
+        required: false
+    },
     vehicleNumber: { type: String, required: true },
     outTime: { type: String },
     inTime: { type: String },

@@ -1,161 +1,258 @@
 'use client'
 
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { StatusBadge } from '@/components/status-badge';
+import { ApprovalTimeline } from '@/components/approval-timeline';
+import { useEffect, useState } from 'react';
+import { getRequestById } from '@/services/request.service';
+import { getCertificateByRequestId } from '@/services/certificate.service';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { ArrowLeft, Send, Truck, MapPin, Calendar } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import {
+    ArrowLeft,
+    Truck,
+    MapPin,
+    Calendar,
+    Clock,
+    User,
+    Phone,
+    FileCheck,
+    Download,
+    CheckCircle,
+    XCircle
+} from 'lucide-react';
+import { useParams, useRouter } from 'next/navigation';
+import { formatDate } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useUserStore } from '@/hooks/use-user-store';
 
-export default function NewRequest() {
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const router = useRouter()
+export default function RequestDetailsPage() {
+    const { id } = useParams<{ id: string }>();
+    const router = useRouter();
+    const { user } = useUserStore();
+    const [remarks, setRemarks] = useState('');
+    const [request, setRequest] = useState<any>(null);
+    const [certificate, setCertificate] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        setIsSubmitting(true);
+    useEffect(() => {
+        async function fetchData() {
+            setLoading(true);
+            try {
+                const req = await getRequestById(id);
+                setRequest(req);
+                if (req) {
+                    const cert = await getCertificateByRequestId(req._id.toString());
+                    setCertificate(cert);
+                } else {
+                    setCertificate(null);
+                }
+            } catch (e) {
+                setRequest(null);
+                setCertificate(null);
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchData();
+    }, [id]);
 
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
+    if (loading) {
+        return (
+            <div className="text-center py-12">
+                <p className="text-muted-foreground">Loading...</p>
+            </div>
+        );
+    }
 
-        toast('Request Submitted', {
-            description: 'Your movement request has been submitted for approval. (Demo mode)',
+    if (!request) {
+        return (
+            <div className="text-center py-12">
+                <p className="text-muted-foreground">Request not found</p>
+                <Button variant="outline" onClick={() => router.back()} className="mt-4">
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Go Back
+                </Button>
+            </div>
+        );
+    }
+
+    const canApprove = () => {
+        if (!user) return false;
+        const roleMap: Record<string, string> = {
+            adjutant: 'pending_adjutant',
+            co: 'pending_co',
+            gso1: 'pending_gso1',
+            col_staff: 'pending_col_staff',
+        };
+        return roleMap[user.role] === request.status;
+    };
+
+    const handleApproval = (action: 'approved' | 'rejected') => {
+        // TODO: Implement real approval logic here
+        const description = `The request has been ${action}.`;
+        action === 'approved' ? toast.success('Request Approved', {
+            description,
+        }) : toast.error('Request Rejected', {
+            description,
         });
-
-        setIsSubmitting(false);
-        router.push('/requests');
     };
 
     return (
-        <div className="max-w-3xl mx-auto space-y-6">
+        <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center gap-4">
-                <Button variant="ghost" onClick={() => router.back()}>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                <Button variant="ghost" onClick={() => router.back()} className="w-fit">
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Back
                 </Button>
-                <div>
-                    <h1 className="text-2xl font-bold text-foreground">New Movement Request</h1>
+                <div className="flex-1">
+                    <div className="flex items-center gap-3">
+                        <h1 className="text-2xl font-bold text-foreground">
+                            {request.requestNumber}
+                        </h1>
+                        <StatusBadge status={request.status} />
+                    </div>
                     <p className="text-muted-foreground">
-                        Submit a new vehicle movement request for approval
+                        Created on {formatDate(new Date(request.createdAt))}
                     </p>
                 </div>
+                {certificate && (
+                    <Button variant="outline" className="w-fit">
+                        <Download className="h-4 w-4 mr-2" />
+                        Download Certificate
+                    </Button>
+                )}
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Vehicle Details */}
-                <Card className="animate-fade-in">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg">
-                            <Truck className="h-5 w-5" />
-                            Vehicle Details
-                        </CardTitle>
-                        <CardDescription>
-                            Enter the vehicle and driver information
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid gap-4 sm:grid-cols-2">
-                        <div className="space-y-2">
-                            <Label htmlFor="vehicleNumber">Vehicle Number *</Label>
-                            <Input id="vehicleNumber" placeholder="e.g., ARMY-4521" required />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="vehicleType">Vehicle Type *</Label>
-                            <Input id="vehicleType" placeholder="e.g., Toyota Land Cruiser" required />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="driverName">Driver Name *</Label>
-                            <Input id="driverName" placeholder="e.g., Cpl Saleem" required />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="driverContact">Driver Contact *</Label>
-                            <Input id="driverContact" placeholder="e.g., +92-321-1234567" required />
-                        </div>
-                    </CardContent>
-                </Card>
+            <div className="grid gap-6 lg:grid-cols-3">
+                {/* Main Details */}
+                <div className="lg:col-span-2 space-y-6">
+                    {/* Vehicle Info */}
+                    <Card className="animate-fade-in">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-lg">
+                                <Truck className="h-5 w-5" />
+                                Vehicle Details
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <p className="text-sm text-muted-foreground">Vehicle Number</p>
+                                <p className="font-semibold">{request.vehicleNumber}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-muted-foreground">Vehicle Type</p>
+                                <p className="font-semibold">{request.vehicleType}</p>
+                            </div>
+                            <div className="flex items-start gap-2">
+                                <User className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Driver Name</p>
+                                    <p className="font-semibold">{request.driverName}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-start gap-2">
+                                <Phone className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Contact</p>
+                                    <p className="font-semibold">{request.driverContact}</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
 
-                {/* Movement Details */}
-                <Card className="animate-fade-in" style={{ animationDelay: '100ms' }}>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg">
-                            <MapPin className="h-5 w-5" />
-                            Movement Details
-                        </CardTitle>
-                        <CardDescription>
-                            Specify the purpose and route of movement
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="purpose">Purpose of Movement *</Label>
-                            <Textarea
-                                id="purpose"
-                                placeholder="e.g., Official duty - Equipment transport to forward base"
-                                required
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="destination">Destination *</Label>
-                            <Input id="destination" placeholder="e.g., Forward Base Delta" required />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="route">Route *</Label>
-                            <Input id="route" placeholder="e.g., HQ → Checkpoint Alpha → Forward Base Delta" required />
-                        </div>
-                    </CardContent>
-                </Card>
+                    {/* Movement Info */}
+                    <Card className="animate-fade-in" style={{ animationDelay: '100ms' }}>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-lg">
+                                <MapPin className="h-5 w-5" />
+                                Movement Details
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div>
+                                <p className="text-sm text-muted-foreground">Purpose</p>
+                                <p className="font-semibold">{request.purpose}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-muted-foreground">Route</p>
+                                <p className="font-semibold">{request.route}</p>
+                            </div>
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="flex items-start gap-2">
+                                    <Calendar className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">Departure</p>
+                                        <p className="font-semibold">
+                                            {formatDate(new Date(request.departureDate))} at {request.departureTime}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-start gap-2">
+                                    <Clock className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">Expected Return</p>
+                                        <p className="font-semibold">
+                                            {formatDate(new Date(request.expectedReturnDate))} at {request.expectedReturnTime}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
 
-                {/* Timing Details */}
-                <Card className="animate-fade-in" style={{ animationDelay: '200ms' }}>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg">
-                            <Calendar className="h-5 w-5" />
-                            Schedule
-                        </CardTitle>
-                        <CardDescription>
-                            Set the departure and expected return times
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid gap-4 sm:grid-cols-2">
-                        <div className="space-y-2">
-                            <Label htmlFor="departureDate">Departure Date *</Label>
-                            <Input type="date" id="departureDate" required />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="departureTime">Departure Time *</Label>
-                            <Input type="time" id="departureTime" required />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="returnDate">Expected Return Date *</Label>
-                            <Input type="date" id="returnDate" required />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="returnTime">Expected Return Time *</Label>
-                            <Input type="time" id="returnTime" required />
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Submit Button */}
-                <div className="flex justify-end gap-3">
-                    <Button type="button" variant="outline" onClick={() => router.back()}>
-                        Cancel
-                    </Button>
-                    <Button type="submit" disabled={isSubmitting}>
-                        {isSubmitting ? (
-                            <>Submitting...</>
-                        ) : (
-                            <>
-                                <Send className="h-4 w-4 mr-2" />
-                                Submit Request
-                            </>
-                        )}
-                    </Button>
+                    {/* Approval Actions */}
+                    {canApprove() && (
+                        <Card className="border-warning/50 animate-fade-in" style={{ animationDelay: '200ms' }}>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-lg">
+                                    <FileCheck className="h-5 w-5" />
+                                    Your Decision
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div>
+                                    <p className="text-sm text-muted-foreground mb-2">Remarks (Optional)</p>
+                                    <Textarea
+                                        placeholder="Add any remarks or notes..."
+                                        value={remarks}
+                                        onChange={(e) => setRemarks(e.target.value)}
+                                    />
+                                </div>
+                                <div className="flex gap-3">
+                                    <Button
+                                        className="flex-1 bg-success hover:bg-success/80 text-white"
+                                        onClick={() => handleApproval('approved')}
+                                    >
+                                        <CheckCircle className="h-4 w-4 mr-2" />
+                                        Approve
+                                    </Button>
+                                    <Button
+                                        className="flex-1 bg-destructive hover:bg-destructive/80 text-white"
+                                        onClick={() => handleApproval('rejected')}
+                                    >
+                                        <XCircle className="h-4 w-4 mr-2" />
+                                        Reject
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
-            </form>
+
+                {/* Approval Timeline */}
+                <div className="animate-fade-in" style={{ animationDelay: '150ms' }}>
+                    <Card className="sticky top-24">
+                        <CardContent className="pt-6">
+                            <ApprovalTimeline
+                                history={request.approvalHistory}
+                                currentStatus={request.status}
+                            />
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
         </div>
     );
 }

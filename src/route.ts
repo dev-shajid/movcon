@@ -16,6 +16,8 @@ export function isPublicRoute(pathname: string) {
     if (
         pathname.startsWith('/_next') ||
         pathname.startsWith('/favicon.ico') ||
+        pathname.startsWith('/logo.jpg') ||
+        pathname.startsWith('/logo.png') ||
         pathname.startsWith('/sitemap.xml') ||
         pathname.startsWith('/robots.txt')
     ) {

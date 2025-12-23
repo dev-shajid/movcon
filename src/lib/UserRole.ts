@@ -1,6 +1,6 @@
 export const UserRole = {
     MT_OFFICE: 'mt_office',
-    ADJAUNT: 'adjaunt',
+    ADJUTANT: 'adjutant',
     CO: 'co',
     GSO1: 'gso1',
     COL_STAFF: 'col_staff',

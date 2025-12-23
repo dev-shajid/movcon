@@ -24,7 +24,7 @@ export interface User {
 }
 
 export interface MovementRequest {
-  id: string;
+  _id: string;
   requestNumber: string;
   vehicleNumber: string;
   vehicleType: string;

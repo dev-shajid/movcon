@@ -19,22 +19,22 @@ const roleRouteAccess: Record<TUserRole, string[]> = {
     ],
     adjutant: [
         '/',
-        '/approvals',
+        '/requested-movements',
         '/requests',
     ],
     co: [
         '/',
-        '/approvals',
+        '/requested-movements',
         '/requests',
     ],
     gso1: [
         '/',
-        '/approvals',
+        '/requested-movements',
         '/requests',
     ],
     col_staff: [
         '/',
-        '/approvals',
+        '/requested-movements',
         '/requests',
     ],
     mp_checkpost: [

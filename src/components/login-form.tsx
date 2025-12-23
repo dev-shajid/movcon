@@ -22,6 +22,7 @@ import { Controller, useForm } from "react-hook-form"
 import * as z from "zod"
 import Link from "next/link"
 import { useState, useEffect, Suspense } from "react"
+import QuickRoleLogin from "@/components/quick-role-login"
 import { useRouter, useSearchParams } from "next/navigation"
 import { login } from "@/services/auth.service"
 import { AUTH_REDIRECT_URL } from "@/route"
@@ -83,7 +84,7 @@ function LoginFormContent({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card>
+      <Card className="max-w-sm mx-auto animate-fade-in w-full">
         <CardHeader className="text-center">
           <CardTitle className="text-xl">Welcome back</CardTitle>
           <CardDescription>
@@ -160,6 +161,8 @@ function LoginFormContent({
           </form>
         </CardContent>
       </Card>
+      {/* Temporary: Quick login as different user roles */}
+      <QuickRoleLogin onSubmit={onSubmit} />
     </div>
   )
 }

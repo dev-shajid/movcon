@@ -22,7 +22,7 @@ import { Controller, useForm } from "react-hook-form"
 import * as z from "zod"
 import Link from "next/link"
 import { useState } from "react"
-import { signup } from "@/services/auth.service"
+import { logout, signup } from "@/services/auth.service"
 import { AuthError } from "@supabase/supabase-js"
 import { useRouter } from "next/navigation"
 import { WAITING_VERIFICATION_URL } from "@/route"
@@ -52,15 +52,15 @@ export function SignUpForm({
   const form = useForm<z.infer<typeof SignupSchema>>({
     resolver: zodResolver(SignupSchema),
     defaultValues: {
-      baNo: "1",
-      rank: "1",
-      name: "shajid",
-      unitName: "abc",
-      appointment: "1",
-      formation: "1",
-      mobile: "1234567890",
-      email: "sajidislam729@gmail.com",
-      password: "shajib786",
+      baNo: "",
+      rank: "",
+      name: "",
+      unitName: "",
+      appointment: "",
+      formation: "",
+      mobile: "",
+      email: "",
+      password: "",
     },
   })
 
